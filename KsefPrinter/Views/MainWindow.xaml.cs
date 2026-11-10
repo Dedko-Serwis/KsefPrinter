@@ -17,7 +17,7 @@ public partial class MainWindow : Window
 
         try
         {
-            string path = assembly.Location;
+            string? path = Environment.ProcessPath;
             if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
                 build = File.GetLastWriteTime(path).ToString("yyyy-MM-dd HH:mm:ss");
         }

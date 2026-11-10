@@ -16,6 +16,8 @@ public class AppSettings
 {
     public int UpdateCheckDays { get; set; } = 7;
     public DateTimeOffset? LastUpdateCheckUtc { get; set; }
+    public DateTimeOffset? LastUpdatedUtc { get; set; }
+    public string? LastRunVersion { get; set; }
 
     public double PreviewLeft { get; set; } = -1;
     public double PreviewTop { get; set; } = -1;

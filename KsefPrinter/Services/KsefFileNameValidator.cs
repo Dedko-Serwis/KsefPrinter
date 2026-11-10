@@ -21,7 +21,7 @@ public static class KsefFileNameValidator
         string number = Path.GetFileNameWithoutExtension(path);
 
         // Obsługa nazw plików pobranych wielokrotnie,
-        // np. 1132567365-20260901-5B39C9000021-22(1).xml
+        // np. 0000000000-20260101-000000000000-00(1).xml
         number = Regex.Replace(number, @"\s*\(\d+\)$", "");
 
         var match = Pattern.Match(number);

@@ -9,12 +9,12 @@ $installerScript = Join-Path $root 'installer\KsefPrinter.iss'
 [xml]$csproj = Get-Content -LiteralPath $project
 $version = [string]$csproj.Project.PropertyGroup.Version
 if ([string]::IsNullOrWhiteSpace($version) -or $version -notmatch '^\d+\.\d+\.\d+(\.\d+)?$') {
-    throw "Nieprawidłowa wersja w KsefPrinter.csproj: '$version'"
+    throw "Nieprawidlowa wersja w KsefPrinter.csproj: '$version'"
 }
 
 Write-Host "Publikowanie KsefPrinter $version (win-x64, bez .NET Runtime)..."
 dotnet publish $project -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o $publishDir
-if ($LASTEXITCODE -ne 0) { throw 'dotnet publish nie powiódł się.' }
+if ($LASTEXITCODE -ne 0) { throw 'dotnet publish nie powiodl sie.' }
 
 $isccCandidates = @(
     (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 7\ISCC.exe'),
@@ -33,11 +33,11 @@ if (-not $iscc) {
 
 Write-Host "Tworzenie instalatora Inno Setup..."
 & $iscc "/DMyAppVersion=$version" $installerScript
-if ($LASTEXITCODE -ne 0) { throw 'Kompilacja instalatora nie powiodła się.' }
+if ($LASTEXITCODE -ne 0) { throw 'Kompilacja instalatora nie powiodla sie.' }
 
 $output = Join-Path $root "dist\KsefPrinter-$version-Setup.exe"
 if (-not (Test-Path -LiteralPath $output)) { throw "Nie znaleziono instalatora: $output" }
 $hash = (Get-FileHash -LiteralPath $output -Algorithm SHA256).Hash
 Write-Host "Gotowe: $output"
 Write-Host "SHA-256: $hash"
-Write-Host 'Przed publikacją przetestuj instalację i aktualizację na Windows.'
+Write-Host 'Przed publikacja przetestuj instalacje i aktualizacje na Windows.'

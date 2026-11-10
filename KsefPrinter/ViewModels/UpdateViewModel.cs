@@ -22,6 +22,27 @@ public sealed class UpdateViewModel : ObservableObject
     private string _notes = "";
     private bool _hasUpdate;
     private bool _busy;
+    private string _latestVersion = "—";
+    private DateTimeOffset? _lastCheck;
+    private DateTimeOffset? _lastUpdated;
+    public string CurrentVersion => (Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 0)).ToString(3);
+    public string LatestVersion { get => _latestVersion; private set => SetProperty(ref _latestVersion, value); }
+    public string LastCheckText => _lastCheck?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "Nigdy";
+    public string LastUpdatedText => _lastUpdated?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "Nigdy";
+    public string[] UpdateCheckOptions { get; } = ["Nie sprawdzaj", "Co 30 dni", "Co 7 dni"];
+    private string _selectedUpdateCheck = "Co 7 dni";
+    public string SelectedUpdateCheck
+    {
+        get => _selectedUpdateCheck;
+        set
+        {
+            if (!SetProperty(ref _selectedUpdateCheck, value)) return;
+            var settings = _settings.Load();
+            settings.UpdateCheckDays = value switch { "Nie sprawdzaj" => 0, "Co 30 dni" => 30, _ => 7 };
+            try { _settings.Save(settings); }
+            catch (Exception ex) { UpdateStatus = "Błąd zapisu ustawień: " + ex.Message; }
+        }
+    }
     private string? _assetUrl;
     private string? _assetName;
     private string? _assetDigest;
@@ -36,6 +57,24 @@ public sealed class UpdateViewModel : ObservableObject
     {
         CheckCommand = new RelayCommand(async _ => await CheckAsync());
         InstallCommand = new RelayCommand(async _ => await InstallAsync());
+        var settings = _settings.Load();
+        _lastCheck = settings.LastUpdateCheckUtc;
+        _lastUpdated = settings.LastUpdatedUtc;
+        _selectedUpdateCheck = settings.UpdateCheckDays switch { 0 => "Nie sprawdzaj", 30 => "Co 30 dni", _ => "Co 7 dni" };
+        string version = CurrentVersion;
+        if (settings.LastRunVersion is not null &&
+            Version.TryParse(settings.LastRunVersion, out var previous) &&
+            Version.TryParse(version, out var currentVersion) && currentVersion > previous)
+        {
+            settings.LastUpdatedUtc = DateTimeOffset.UtcNow;
+            _lastUpdated = settings.LastUpdatedUtc;
+            OnPropertyChanged(nameof(LastUpdatedText));
+        }
+        if (settings.LastRunVersion != version)
+        {
+            settings.LastRunVersion = version;
+            _settings.Save(settings);
+        }
         _ = CheckOnStartupAsync();
     }
 
@@ -78,6 +117,7 @@ public sealed class UpdateViewModel : ObservableObject
             if (!Version.TryParse(tag, out var latest)) throw new FormatException("Nieprawidłowy numer wersji Release.");
             var current = Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 0);
             var newer = latest > current;
+            LatestVersion = latest.ToString(3);
             ReleaseNotes = release.TryGetProperty("body", out var body) ? body.GetString() ?? "" : "";
             _assetUrl = _assetName = _assetDigest = null;
             if (newer && release.TryGetProperty("assets", out var assets))
@@ -99,6 +139,8 @@ public sealed class UpdateViewModel : ObservableObject
             var settings = _settings.Load();
             settings.LastUpdateCheckUtc = DateTimeOffset.UtcNow;
             _settings.Save(settings);
+            _lastCheck = settings.LastUpdateCheckUtc;
+            OnPropertyChanged(nameof(LastCheckText));
         }
         catch (Exception ex)
         {

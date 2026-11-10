@@ -6,6 +6,9 @@
     Title="Ksef Printer" Width="640" Height="500"
     MinWidth="640" MinHeight="500" ResizeMode="CanResize"
     Topmost="True" WindowStyle="SingleBorderWindow">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+    </Window.Resources>
     <Window.DataContext><vm:MainViewModel/></Window.DataContext>
     <DockPanel>
         <StatusBar DockPanel.Dock="Bottom">
@@ -63,51 +66,72 @@
         </TabItem>
         <TabItem>
             <TabItem.Header><TextBlock Text="Aktualizacja" Foreground="{Binding Update.TabColor}"/></TabItem.Header>
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <StackPanel Margin="15">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" Margin="0,0,12,0">
-                            <TextBlock Text="Zainstalowana wersja" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding Update.CurrentVersion, StringFormat=v{0}}" FontSize="20" Margin="0,5,0,0"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1">
-                            <TextBlock Text="Najnowsza wersja" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding Update.LatestVersion, StringFormat=v{0}}" FontSize="20" Margin="0,5,0,0"/>
-                            <Button Content="Aktualizuj" Command="{Binding Update.InstallCommand}"
-                                    IsEnabled="{Binding Update.HasUpdate}" Margin="0,8,0,0" Padding="12,5"/>
-                        </StackPanel>
-                    </Grid>
-                    <Separator Margin="0,14,0,10"/>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="170"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Text="Ostatnia aktualizacja:" Margin="0,4"/>
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Update.LastUpdatedText}" Margin="0,4"/>
-                        <TextBlock Grid.Row="1" Text="Ostatnie sprawdzenie:" Margin="0,4"/>
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Update.LastCheckText}" Margin="0,4"/>
-                        <TextBlock Grid.Row="2" Text="Sprawdzanie aktualizacji:" Margin="0,4" VerticalAlignment="Center"/>
-                        <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Update.UpdateCheckOptions}"
-                                  SelectedItem="{Binding Update.SelectedUpdateCheck}"/>
-                    </Grid>
-                    <Button Content="Sprawdź teraz" Command="{Binding Update.CheckCommand}"
-                            HorizontalAlignment="Left" Margin="0,12,0,0" Padding="12,5"/>
-                    <TextBlock Text="{Binding Update.UpdateStatus}" TextWrapping="Wrap" Margin="0,12,0,0"/>
-                    <TextBlock Margin="0,12,0,4" Text="Co nowego w najnowszej wersji:" FontWeight="SemiBold"/>
-                    <TextBox Text="{Binding Update.ReleaseNotes, Mode=OneWay}" IsReadOnly="True"
-                             TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Height="115"/>
-                </StackPanel>
-            </ScrollViewer>
+            <Grid Margin="15">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="Okres sprawdzania aktualizacji:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding Update.UpdateCheckOptions}"
+                              SelectedItem="{Binding Update.SelectedUpdateCheck}" MinWidth="130" VerticalAlignment="Center"/>
+                    <Button Grid.Column="2" Content="Sprawdź teraz" Command="{Binding Update.CheckCommand}"
+                            Margin="10,0,0,0" Padding="12,5"/>
+                </Grid>
+                <Grid Grid.Row="1" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="170"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Row="0" Text="Ostatnie sprawdzenie:" Margin="0,3"/>
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Update.LastCheckText}" Margin="0,3"/>
+                    <TextBlock Grid.Row="1" Text="Ostatnia aktualizacja:" Margin="0,3"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Update.LastUpdatedText}" Margin="0,3"/>
+                </Grid>
+                <Separator Grid.Row="2" Margin="0,12,0,10"/>
+                <Grid Grid.Row="3">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Obecna wersja" FontWeight="SemiBold"/>
+                        <TextBlock Text="{Binding Update.CurrentVersion, StringFormat=v{0}}" FontSize="20" Margin="0,5,0,0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Visibility="{Binding Update.HasUpdate, Converter={StaticResource BoolToVisibility}}">
+                        <TextBlock Text="Nowa wersja" FontWeight="SemiBold"/>
+                        <DockPanel Margin="0,5,0,0">
+                            <Button DockPanel.Dock="Right" Content="Aktualizuj" Command="{Binding Update.InstallCommand}"
+                                    Padding="12,5" Margin="10,0,0,0"/>
+                            <TextBlock Text="{Binding Update.LatestVersion, StringFormat=v{0}}" FontSize="20"
+                                       VerticalAlignment="Center"/>
+                        </DockPanel>
+                    </StackPanel>
+                </Grid>
+                <TextBlock Grid.Row="4" Text="{Binding Update.UpdateStatus}" TextWrapping="Wrap" Margin="0,10,0,8"/>
+                <Grid Grid.Row="5" MinHeight="65">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="Co nowego w najnowszej wersji:" FontWeight="SemiBold" Margin="0,0,0,5"/>
+                    <TextBox Grid.Row="1" Text="{Binding Update.ReleaseNotes, Mode=OneWay}" IsReadOnly="True"
+                             TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"/>
+                </Grid>
+            </Grid>
         </TabItem></TabControl>
     </DockPanel>
 </Window>

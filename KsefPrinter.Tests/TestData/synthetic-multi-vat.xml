@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Faktura xmlns="http://crd.gov.pl/wzor/2025/06/25/13775/"><Fa><KodWaluty>PLN</KodWaluty><P_1>2026-10-07</P_1><P_2>SYN/MULTI/1</P_2><P_13_1>100.00</P_13_1><P_14_1>23.00</P_14_1><P_13_2>100.00</P_13_2><P_14_2>8.00</P_14_2><P_15>231.00</P_15><FaWiersz><NrWierszaFa>1</NrWierszaFa><P_7>A</P_7><P_11>100</P_11><P_12>23</P_12></FaWiersz><FaWiersz><NrWierszaFa>2</NrWierszaFa><P_7>B</P_7><P_11>100</P_11><P_12>8</P_12></FaWiersz></Fa></Faktura>

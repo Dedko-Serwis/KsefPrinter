@@ -1,5 +1,3 @@
-using System;
-using System.IO;
 using System.Reflection;
 using System.Windows;
 
@@ -11,21 +9,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        var assembly = Assembly.GetExecutingAssembly();
-        string version = assembly.GetName().Version?.ToString(3) ?? "nieznana";
-        string build = "nieznany";
-
-        try
-        {
-            string? path = Environment.ProcessPath;
-            if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
-                build = File.GetLastWriteTime(path).ToString("yyyy-MM-dd HH:mm:ss");
-        }
-        catch (Exception)
-        {
-            // Wersja pozostaje widoczna także wtedy, gdy odczyt daty EXE nie jest możliwy.
-        }
-
-        Title = $"KsefPrinter v{version} | kompilacja: {build}";
+        string version = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "nieznana";
+        Title = $"KsefPrinter v{version} — DEDKO-Serwis";
     }
 }

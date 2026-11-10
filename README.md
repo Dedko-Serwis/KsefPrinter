@@ -47,6 +47,12 @@ Przeciągnij plik faktury XML na pole w zakładce **Drukowanie**. W zakładce **
 
 Planowane wydania są publikowane w sekcji [Releases](https://github.com/Dedko-Serwis/KsefPrinter/releases). Aplikacja może okresowo sprawdzać ich dostępność. Pobranie i uruchomienie instalatora wymaga potwierdzenia użytkownika. Do czasu opublikowania odpowiedniego instalatora mechanizm aktualizacji nie będzie kompletny.
 
+## Schematy KSeF i zależności
+
+Do odczytu dokumentów FA(3) projekt zawiera schematy XSD pochodzące z oficjalnych materiałów Ministerstwa Finansów, opublikowanych w [Centralnym Repozytorium Wzorów Dokumentów Elektronicznych](https://crd.gov.pl/wzor/2025/06/25/13775/). Schematy są materiałami zewnętrznymi; licencja GPLv3 dotycząca kodu KsefPrinter nie jest deklaracją praw autorskich do tych schematów.
+
+Aplikacja wykorzystuje bibliotekę NuGet **QRCoder** do obsługi kodów QR. Projekty testowe wykorzystują **xUnit**, **Microsoft.NET.Test.Sdk** i **xunit.runner.visualstudio**. Każda z tych zależności podlega własnym warunkom licencyjnym; przed dystrybucją pakietów binarnych należy sprawdzić obowiązujące licencje i wymagane informacje o prawach autorskich.
+
 ## Prywatność danych
 
 Faktury mogą zawierać dane osobowe i handlowe. **Nie umieszczaj rzeczywistych faktur w zgłoszeniach GitHub, commitach ani pull requestach.** Do testów i zgłoszeń stosuj dane syntetyczne lub skutecznie zanonimizowane.

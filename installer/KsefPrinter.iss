@@ -19,11 +19,24 @@ OutputBaseFilename=KsefPrinter-{#MyAppVersion}-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+ShowLanguageDialog=auto
 UninstallDisplayIcon={app}\KsefPrinter.exe
 CloseApplications=yes
 RestartApplications=no
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
+
+[Languages]
+Name: "polish"; MessagesFile: "compiler:Languages\Polish.isl"
+Name: "english"; MessagesFile: "compiler:Default.isl"
+
+[CustomMessages]
+polish.DesktopIcon=Utworz skrot na pulpicie
+english.DesktopIcon=Create a desktop shortcut
+polish.AdditionalShortcuts=Dodatkowe skroty:
+english.AdditionalShortcuts=Additional shortcuts:
+polish.LaunchApp=Uruchom KsefPrinter
+english.LaunchApp=Launch KsefPrinter
 
 [Files]
 Source: "..\publish\KsefPrinter\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -33,7 +46,7 @@ Name: "{autoprograms}\KsefPrinter"; Filename: "{app}\KsefPrinter.exe"
 Name: "{autodesktop}\KsefPrinter"; Filename: "{app}\KsefPrinter.exe"; Tasks: desktopicon
 
 [Tasks]
-Name: "desktopicon"; Description: "Utwórz skrót na pulpicie"; GroupDescription: "Dodatkowe skróty:"
+Name: "desktopicon"; Description: "{cm:DesktopIcon}"; GroupDescription: "{cm:AdditionalShortcuts}"
 
 [Run]
-Filename: "{app}\KsefPrinter.exe"; Description: "Uruchom KsefPrinter"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\KsefPrinter.exe"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent

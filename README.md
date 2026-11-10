@@ -2,6 +2,12 @@
 
 KsefPrinter to aplikacja Windows do wczytywania faktur KSeF w formacie XML FA(3), przygotowania podglądu oraz drukowania.
 
+## Darmowy również do użytku komercyjnego
+
+**KsefPrinter jest darmowy — także dla firm i do zastosowań komercyjnych.** Możesz bez opłat używać programu do obsługi własnych faktur, również w działalności gospodarczej. Nie jest wymagany zakup licencji, abonament ani zgoda autora na samo użytkowanie.
+
+Program jest udostępniany na licencji **GNU GPL v3.0**. Możesz również analizować, modyfikować i rozpowszechniać jego kod zgodnie z warunkami GPLv3. Przy rozpowszechnianiu programu lub wersji zmodyfikowanej obowiązują wymagania licencji, w tym zachowanie informacji o autorze i udostępnienie odpowiedniego kodu źródłowego odbiorcom. Szczegóły: [LICENSE](LICENSE) i [NOTICE.md](NOTICE.md).
+
 **Autor:** DEDKO-Serwis  
 **Projekt:** https://github.com/Dedko-Serwis/KsefPrinter
 
@@ -47,6 +53,6 @@ Faktury mogą zawierać dane osobowe i handlowe. **Nie umieszczaj rzeczywistych 
 
 ## Licencja
 
-Kod źródłowy: GNU GPL v3.0 z dodatkowym warunkiem zachowania informacji o autorze i odnośnika do projektu (sekcja 7(b) GPLv3). Zobacz [LICENSE](LICENSE) i [NOTICE.md](NOTICE.md).
+Program jest dostępny bezpłatnie, również do użytku komercyjnego, na warunkach GNU GPL v3.0. Dodatkowy warunek dotyczący zachowania informacji o autorze i odnośnika do projektu opisano w [NOTICE.md](NOTICE.md) (sekcja 7(b) GPLv3). Pełny tekst licencji: [LICENSE](LICENSE).
 
 Biblioteki i materiały osób trzecich mogą podlegać odrębnym licencjom.

@@ -16,19 +16,42 @@ Write-Host "Publikowanie KsefPrinter $version (win-x64, bez .NET Runtime)..."
 dotnet publish $project -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o $publishDir
 if ($LASTEXITCODE -ne 0) { throw 'dotnet publish nie powiodl sie.' }
 
-$isccCandidates = @(
-    (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 7\ISCC.exe'),
-    (Join-Path $env:ProgramFiles 'Inno Setup 7\ISCC.exe'),
-    (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
-    (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe')
-)
-$iscc = $isccCandidates | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+# Find Inno Setup installed for all users or only for the current user.
+$programRoots = @(
+    $env:ProgramFiles,
+    [Environment]::GetEnvironmentVariable('ProgramFiles(x86)'),
+    $env:LOCALAPPDATA
+) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -Unique
+
+$isccCandidates = @()
+foreach ($base in $programRoots) {
+    foreach ($name in @('Inno Setup 7', 'Inno Setup 6', 'Programs\Inno Setup 7', 'Programs\Inno Setup 6')) {
+        $isccCandidates += Join-Path $base "$name\ISCC.exe"
+    }
+}
+
+# The installer may register a custom destination.
+foreach ($regPath in @(
+    'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 7_is1',
+    'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 7_is1',
+    'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 7_is1',
+    'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 6_is1',
+    'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 6_is1',
+    'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Inno Setup 6_is1'
+)) {
+    $install = Get-ItemProperty -Path $regPath -ErrorAction SilentlyContinue
+    if ($install -and $install.InstallLocation) {
+        $isccCandidates += Join-Path $install.InstallLocation 'ISCC.exe'
+    }
+}
+
+$iscc = $isccCandidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
 if (-not $iscc) {
     $cmd = Get-Command ISCC.exe -ErrorAction SilentlyContinue
     if ($cmd) { $iscc = $cmd.Source }
 }
 if (-not $iscc) {
-    throw 'Nie znaleziono ISCC.exe. Zainstaluj Inno Setup lub dodaj katalog Inno Setup do PATH.'
+    throw 'Nie znaleziono ISCC.exe. Podaj lokalizacje pliku ISCC.exe z katalogu Inno Setup.'
 }
 
 Write-Host "Tworzenie instalatora Inno Setup..."

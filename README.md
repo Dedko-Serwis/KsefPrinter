@@ -45,7 +45,7 @@ Przeciągnij plik faktury XML na pole w zakładce **Drukowanie**. W zakładce **
 
 ## Aktualizacje
 
-Planowane wydania są publikowane w sekcji [Releases](https://github.com/Dedko-Serwis/KsefPrinter/releases). Aplikacja może okresowo sprawdzać ich dostępność. Pobranie i uruchomienie instalatora wymaga potwierdzenia użytkownika. Do czasu opublikowania odpowiedniego instalatora mechanizm aktualizacji nie będzie kompletny.
+Planowane wydania są publikowane w sekcji [Releases](https://github.com/Dedko-Serwis/KsefPrinter/releases). Aplikacja może okresowo sprawdzać ich dostępność. Pobranie i uruchomienie instalatora wymaga potwierdzenia użytkownika.
 
 ## Schematy KSeF i zależności
 

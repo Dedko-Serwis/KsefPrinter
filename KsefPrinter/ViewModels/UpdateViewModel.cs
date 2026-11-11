@@ -37,7 +37,7 @@ public sealed class UpdateViewModel : ObservableObject
     public string LatestVersion { get => _latestVersion; private set => SetProperty(ref _latestVersion, value); }
     public string LastCheckText => _lastCheck?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "Nigdy";
     public string LastUpdatedText => _lastUpdated?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "Nigdy";
-    public string[] UpdateCheckOptions { get; } = ["Nie sprawdzaj", "Przy uruchamianiu", "Co 7 dni", "Co 30 dni"];
+    public string[] UpdateCheckOptions { get; } = ["Przy uruchamianiu", "Co 7 dni", "Co 30 dni","Nie sprawdzaj"];
     private string _selectedUpdateCheck = "Co 7 dni";
     public string SelectedUpdateCheck
     {

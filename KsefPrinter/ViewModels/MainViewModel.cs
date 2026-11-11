@@ -121,8 +121,7 @@ public class MainViewModel : ObservableObject
             .Any(q => q.Name == settings.PrinterName);
     }
 
-    public async Task ProcessFile(string path, bool printerEnabled = false, bool showPreview = true)
-        => await ProcessFile(path, 1, 1);
+    public async Task ProcessFile(string path) => await ProcessFile(path, 1, 1);
 
     private async Task ProcessFile(string path, int current, int total)
     {
@@ -195,8 +194,7 @@ public class MainViewModel : ObservableObject
                 bool previousTopmost = mainWindow?.Topmost ?? false;
                 try
                 {
-                    if (mainWindow != null)
-                        mainWindow.Topmost = false;
+                    mainWindow?.Topmost = false;
                     preview.Topmost = true;
                     preview.ShowDialog();
                 }

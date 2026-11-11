@@ -9,7 +9,14 @@
     <Version>1.12.2</Version>
     <AssemblyVersion>1.12.2.0</AssemblyVersion>
     <FileVersion>1.12.2.0</FileVersion>
+	<InformationalVersion>1.12.2</InformationalVersion>
     <ApplicationIcon>Czerwone logo drukarki z papierem.ico</ApplicationIcon>
+    <Title>KsefPrinter</Title>
+    <Authors>DEDKO-Serwis</Authors>
+    <Company>DEDKO-Serwis</Company>
+    <Product>KsefPrinter</Product>
+    <Description>Przeglądarka i drukarka faktur KSeF</Description>
+    <Copyright>© 2026 DEDKO-Serwis</Copyright>
   </PropertyGroup>
 
   <ItemGroup>

@@ -22,6 +22,14 @@ public sealed class UpdateViewModel : ObservableObject
     private string _notes = "";
     private bool _hasUpdate;
     private bool _busy;
+    private bool _isDownloading;
+    private bool _isProgressIndeterminate;
+    private double _downloadPercent;
+    private string _downloadDetails = "";
+    public bool IsDownloading { get => _isDownloading; private set => SetProperty(ref _isDownloading, value); }
+    public bool IsProgressIndeterminate { get => _isProgressIndeterminate; private set => SetProperty(ref _isProgressIndeterminate, value); }
+    public double DownloadPercent { get => _downloadPercent; private set => SetProperty(ref _downloadPercent, value); }
+    public string DownloadDetails { get => _downloadDetails; private set => SetProperty(ref _downloadDetails, value); }
     private string _latestVersion = "—";
     private DateTimeOffset? _lastCheck;
     private DateTimeOffset? _lastUpdated;
@@ -158,20 +166,56 @@ public sealed class UpdateViewModel : ObservableObject
         string? file = null;
         try
         {
-            UpdateStatus = "Pobieram aktualizację...";
+            IsDownloading = true;
+            IsProgressIndeterminate = true;
+            DownloadPercent = 0;
+            DownloadDetails = "Łączenie z GitHub...";
+            UpdateStatus = "Łączenie z GitHub...";
             var directory = Path.Combine(Path.GetTempPath(), "KsefPrinter-Updates");
             Directory.CreateDirectory(directory);
             file = Path.Combine(directory, Guid.NewGuid().ToString("N") + "-Setup.exe");
             using var response = await Client.GetAsync(_assetUrl, HttpCompletionOption.ResponseHeadersRead);
             response.EnsureSuccessStatusCode();
+            long? total = response.Content.Headers.ContentLength;
+            IsProgressIndeterminate = total is null or <= 0;
+            UpdateStatus = "Pobieranie aktualizacji...";
             await using (var input = await response.Content.ReadAsStreamAsync())
             await using (var output = File.Create(file))
-                await input.CopyToAsync(output);
+            {
+                byte[] buffer = new byte[64 * 1024];
+                long downloaded = 0;
+                int lastPercent = -1;
+                long lastUiTick = 0;
+                int read;
+                while ((read = await input.ReadAsync(buffer)) > 0)
+                {
+                    await output.WriteAsync(buffer.AsMemory(0, read));
+                    downloaded += read;
+                    int percent = total is > 0
+                        ? (int)Math.Min(100, downloaded * 100.0 / total.Value)
+                        : -1;
+                    long now = Environment.TickCount64;
+                    if (percent != lastPercent || now - lastUiTick >= 250)
+                    {
+                        if (percent >= 0) DownloadPercent = percent;
+                        DownloadDetails = total is > 0
+                            ? $"Pobrano {downloaded / 1048576.0:F1} MB z {total.Value / 1048576.0:F1} MB ({percent}%)"
+                            : $"Pobrano {downloaded / 1048576.0:F1} MB";
+                        lastPercent = percent;
+                        lastUiTick = now;
+                    }
+                }
+            }
+            DownloadPercent = 100;
+            IsProgressIndeterminate = false;
+            DownloadDetails = "Weryfikowanie sumy SHA-256...";
+            UpdateStatus = "Weryfikowanie sumy SHA-256...";
             await using var stream = File.OpenRead(file);
             var hash = Convert.ToHexString(await SHA256.HashDataAsync(stream));
             if (!hash.Equals(_assetDigest["sha256:".Length..], StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("Suma SHA-256 instalatora nie zgadza się z GitHub Release.");
-            UpdateStatus = "Pobrano i zweryfikowano. Uruchamiam instalator...";
+            DownloadDetails = "Pobrano i zweryfikowano. Uruchamianie instalatora...";
+            UpdateStatus = "Uruchamianie instalatora...";
             Process.Start(new ProcessStartInfo(file) { UseShellExecute = true });
             Application.Current.Shutdown();
         }
@@ -180,6 +224,6 @@ public sealed class UpdateViewModel : ObservableObject
             UpdateStatus = "Błąd aktualizacji: " + ex.Message;
             if (file is not null) try { File.Delete(file); } catch (IOException) { }
         }
-        finally { _busy = false; }
+        finally { IsDownloading = false; _busy = false; }
     }
 }

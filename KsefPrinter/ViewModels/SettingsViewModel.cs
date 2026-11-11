@@ -17,12 +17,10 @@ public class SettingsViewModel : ObservableObject
     private PreferredPriceMode _preferredPrice = PreferredPriceMode.Net;
     private int _itemNameMaxLength = 34;
     private bool _showPrintPreview = true;
-    private string _selectedUpdateCheck = "Co 7 dni";
 
     public ObservableCollection<string> Printers { get; } = [];
     public string[] ItemNameDisplayModes { get; } = ["Zawijaj", "Ucinaj"];
     public string[] PreferredPriceModes { get; } = ["Netto", "Brutto"];
-    public string[] UpdateCheckOptions { get; } = ["Nie sprawdzaj", "Co 30 dni", "Co 7 dni"];
 
     public string SelectedPrinter
     {
@@ -79,11 +77,6 @@ public class SettingsViewModel : ObservableObject
             if (SetProperty(ref _itemNameMaxLength, value)) Save();
         }
     }
-    public string SelectedUpdateCheck
-    {
-        get => _selectedUpdateCheck;
-        set { if (SetProperty(ref _selectedUpdateCheck, value)) Save(); }
-    }
 
     public SettingsViewModel()
     {
@@ -95,7 +88,6 @@ public class SettingsViewModel : ObservableObject
         PreferredPrice = settings.PreferredPrice;
         ItemNameMaxLength = settings.ItemNameMaxLength;
         ShowPrintPreview = settings.ShowPrintPreview;
-        SelectedUpdateCheck = settings.UpdateCheckDays switch { 0 => "Nie sprawdzaj", 30 => "Co 30 dni", _ => "Co 7 dni" };
         _loading = false;
     }
 
@@ -110,7 +102,6 @@ public class SettingsViewModel : ObservableObject
             settings.PreferredPrice = PreferredPrice;
             settings.ItemNameMaxLength = ItemNameMaxLength;
             settings.ShowPrintPreview = ShowPrintPreview;
-            settings.UpdateCheckDays = SelectedUpdateCheck switch { "Nie sprawdzaj" => 0, "Co 30 dni" => 30, _ => 7 };
             _settingsService.Save(settings);
             Saved?.Invoke(this, EventArgs.Empty);
         }

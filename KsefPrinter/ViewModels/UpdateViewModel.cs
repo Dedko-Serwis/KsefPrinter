@@ -37,7 +37,7 @@ public sealed class UpdateViewModel : ObservableObject
     public string LatestVersion { get => _latestVersion; private set => SetProperty(ref _latestVersion, value); }
     public string LastCheckText => _lastCheck?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "Nigdy";
     public string LastUpdatedText => _lastUpdated?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "Nigdy";
-    public string[] UpdateCheckOptions { get; } = ["Nie sprawdzaj", "Co 30 dni", "Co 7 dni"];
+    public string[] UpdateCheckOptions { get; } = ["Nie sprawdzaj", "Przy uruchamianiu", "Co 7 dni", "Co 30 dni"];
     private string _selectedUpdateCheck = "Co 7 dni";
     public string SelectedUpdateCheck
     {
@@ -46,7 +46,14 @@ public sealed class UpdateViewModel : ObservableObject
         {
             if (!SetProperty(ref _selectedUpdateCheck, value)) return;
             var settings = _settings.Load();
-            settings.UpdateCheckDays = value switch { "Nie sprawdzaj" => 0, "Co 30 dni" => 30, _ => 7 };
+            settings.UpdateCheckDays = value switch
+            {
+                "Nie sprawdzaj" => 0,
+                "Przy uruchamianiu" => -1,
+                "Co 7 dni" => 7,
+                "Co 30 dni" => 30,
+                _ => 7
+            };
             try { _settings.Save(settings); }
             catch (Exception ex) { UpdateStatus = "Błąd zapisu ustawień: " + ex.Message; }
         }
@@ -68,7 +75,14 @@ public sealed class UpdateViewModel : ObservableObject
         var settings = _settings.Load();
         _lastCheck = settings.LastUpdateCheckUtc;
         _lastUpdated = settings.LastUpdatedUtc;
-        _selectedUpdateCheck = settings.UpdateCheckDays switch { 0 => "Nie sprawdzaj", 30 => "Co 30 dni", _ => "Co 7 dni" };
+        _selectedUpdateCheck = settings.UpdateCheckDays switch
+        {
+            0 => "Nie sprawdzaj",
+            -1 => "Przy uruchamianiu",
+            7 => "Co 7 dni",
+            30 => "Co 30 dni",
+            _ => "Co 7 dni"
+        };
         string version = CurrentVersion;
         if (settings.LastRunVersion is not null &&
             Version.TryParse(settings.LastRunVersion, out var previous) &&
@@ -97,10 +111,23 @@ public sealed class UpdateViewModel : ObservableObject
     private async Task CheckOnStartupAsync()
     {
         await Task.Yield();
+
         var settings = _settings.Load();
-        if (settings.UpdateCheckDays == 0) return;
-        if (settings.LastUpdateCheckUtc is { } last &&
-            DateTimeOffset.UtcNow - last < TimeSpan.FromDays(settings.UpdateCheckDays)) return;
+
+        // Wyłączone automatyczne sprawdzanie.
+        if (settings.UpdateCheckDays == 0)
+            return;
+
+        // Dla -1 sprawdzamy przy każdym uruchomieniu.
+        // Dla 7 i 30 dni sprawdzamy tylko po upływie okresu.
+        if (settings.UpdateCheckDays > 0 &&
+            settings.LastUpdateCheckUtc is { } last &&
+            DateTimeOffset.UtcNow - last <
+                TimeSpan.FromDays(settings.UpdateCheckDays))
+        {
+            return;
+        }
+
         await CheckAsync();
     }
 

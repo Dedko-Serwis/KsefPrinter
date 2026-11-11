@@ -60,8 +60,6 @@ public class MainViewModel : ObservableObject
         _invoiceDocumentBuilder = new StandardInvoiceDocumentBuilder();
 
         InitializeCommands();
-
-        AddLog("Program uruchomiony");
         ShowPrinterInfo();
         Settings.Saved += (_, _) => ShowPrinterInfo();
     }
@@ -121,15 +119,6 @@ public class MainViewModel : ObservableObject
         bool exists = server
             .GetPrintQueues()
             .Any(q => q.Name == settings.PrinterName);
-
-        if (exists)
-        {
-            AddLog($"Wybrana drukarka: {settings.PrinterName}");
-        }
-        else
-        {
-            AddLog($"Skonfigurowana drukarka '{settings.PrinterName}' nie istnieje w systemie.");
-        }
     }
 
     public async Task ProcessFile(string path, bool printerEnabled = false, bool showPreview = true)

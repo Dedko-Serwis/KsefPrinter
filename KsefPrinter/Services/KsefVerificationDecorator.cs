@@ -71,7 +71,7 @@ public static class KsefVerificationDecorator
         if (section is null) return;
         var invoiceNumber = section.Blocks.OfType<Paragraph>().FirstOrDefault(p =>
             new TextRange(p.ContentStart, p.ContentEnd).Text.Contains("Nr faktury"));
-        var paragraph = new Paragraph { Margin = new Thickness(0, 0, 0, 2), FontSize = 9 };
+        var paragraph = new Paragraph { Margin = new Thickness(0, 0, 0, 2), FontSize = 11 ,FontWeight=FontWeights.Bold};
         paragraph.Inlines.Add(new Bold(new Run("Nr KSeF: ")));
         paragraph.Inlines.Add(new Run(number));
         section.Blocks.InsertAfter(invoiceNumber ?? section.Blocks.FirstBlock!, paragraph);

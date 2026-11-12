@@ -48,13 +48,22 @@ public sealed class StandardInvoiceDocumentBuilder : IInvoiceDocumentBuilder
     // Dwa pola w nagłówku; nie rezerwujemy miejsca dla nieistniejących danych.
     private static void AddHeaderWithSeller(FlowDocument doc, Faktura f)
     {
-        Section details = NewSection();
+        Section details = NewSection();        
         Paragraph title = new(new Bold(new Run(GetDocumentTitle(f.RodzajFaktury))))
         {
-            FontSize = 15, Margin = new Thickness(0, 0, 0, 5)
+            FontSize = 12, Margin = new Thickness(0, 0, 0, 5)
         };
         details.Blocks.Add(title);
-        AddLabelValue(details, "Nr faktury", f.NumerFaktury, boldValue: true);
+        
+        Paragraph invoiceNumber = new()
+        {
+            FontSize = 11,
+            Margin = new Thickness(0, 1, 0, 1)
+        };
+        invoiceNumber.Inlines.Add(new Bold(new Run("Nr faktury: ")));
+        invoiceNumber.Inlines.Add(new Bold(new Run(f.NumerFaktury ?? "")));
+        details.Blocks.Add(invoiceNumber);
+
         AddLabelValue(details, "Data wystawienia", FormatDate(f.DataWystawienia));
         AddLabelValue(details, "Data sprzedaży/dostawy", FormatDate(f.DataDostawy));
         if (f.DataDostawyOd.HasValue || f.DataDostawyDo.HasValue)
@@ -62,8 +71,7 @@ public sealed class StandardInvoiceDocumentBuilder : IInvoiceDocumentBuilder
             string period = $"{FormatDate(f.DataDostawyOd)} – {FormatDate(f.DataDostawyDo)}".Trim(' ', '–');
             AddLabelValue(details, "Okres faktury", period);
         }
-        AddLabelValue(details, "Miejsce wystawienia", f.MiejsceWystawienia);
-        AddLabelValue(details, "Waluta", f.KodWaluty);
+        AddLabelValue(details, "Miejsce wystawienia", f.MiejsceWystawienia);        
 
         Table t = TwoColumnTable();
         TableRow row = new();
@@ -304,6 +312,9 @@ public sealed class StandardInvoiceDocumentBuilder : IInvoiceDocumentBuilder
         FlowDocument left = new();
         FlowDocument right = new();
         AddSectionTitle(left, "Płatność");
+        string? paymentForm = Has(p.OpisPlatnosci) ? p.OpisPlatnosci : PaymentFormLabel(p.FormaPlatnosci);
+        AddLabelValue(left, "Forma płatności", paymentForm);
+        AddLabelValue(left, "Waluta", f.KodWaluty);
         if (p.Zaplacono) AddLabelValue(left, "Informacja o płatności", "Zapłacono");
         if (p.DataZaplaty.HasValue) AddLabelValue(left, "Data zapłaty", FormatDate(p.DataZaplaty));
 
@@ -314,8 +325,7 @@ public sealed class StandardInvoiceDocumentBuilder : IInvoiceDocumentBuilder
                 AddLabelValue(left, "Opis terminu", string.Join(" ", new[] { t.Ilosc, t.Jednostka, t.ZdarzeniePoczatkowe }.Where(Has)));
         }
 
-        string? paymentForm = Has(p.OpisPlatnosci) ? p.OpisPlatnosci : PaymentFormLabel(p.FormaPlatnosci);
-        AddLabelValue(left, "Forma płatności", paymentForm);
+        
 
         foreach (var partial in p.PlatnosciCzesciowe)
         {
@@ -399,8 +409,8 @@ public sealed class StandardInvoiceDocumentBuilder : IInvoiceDocumentBuilder
     private static TableCell CreatePartyCell(string title, string? name, string? nip, string? address, string? country)
     {
         Paragraph p = new() { Margin = new Thickness(4) };
-        p.Inlines.Add(new Bold(new Run(title)));
-        if (Has(name)) p.Inlines.Add(new Run($"\n{name}"));
+        p.Inlines.Add(new Italic(new Run(title+" :") { FontSize=11}));
+        if (Has(name)) p.Inlines.Add(new Bold(new Run($"\n{name}")));
         if (Has(nip)) p.Inlines.Add(new Run($"\nNIP: {nip}"));
         if (Has(address)) p.Inlines.Add(new Run($"\n{address}"));
         if (Has(country) && !string.Equals(country, "PL", StringComparison.OrdinalIgnoreCase)) p.Inlines.Add(new Run($"\nKraj: {country}"));

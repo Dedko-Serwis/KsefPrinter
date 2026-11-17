@@ -12,6 +12,13 @@ public enum PreferredPriceMode
     Gross
 }
 
+public enum PreviewFitMode
+{
+    Height,
+    Width,
+    Custom
+}
+
 public class AppSettings
 {
     public int UpdateCheckDays { get; set; } = 7;
@@ -24,6 +31,8 @@ public class AppSettings
     public double PreviewWidth { get; set; } = 900;
     public double PreviewHeight { get; set; } = 1000;
     public double PreviewZoom { get; set; } = 100;
+    public PreviewFitMode PreviewFitMode { get; set; } = PreviewFitMode.Height;
+    public bool RememberPreviewZoom { get; set; } = false;
     public bool PreviewMaximized { get; set; }
 
     public int ItemNameMaxLength { get; set; } = 34;

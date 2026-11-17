@@ -5,7 +5,7 @@
     xmlns:local="clr-namespace:KsefPrinter.ViewModels"
     Title="Ustawienia"
     Width="500"
-    Height="395"
+    Height="440"
     WindowStartupLocation="CenterScreen">
     <Window.DataContext>
         <local:SettingsViewModel />
@@ -28,6 +28,9 @@
 
         <CheckBox Margin="0,12,0,0" Content="Pokazuj podgląd przed drukowaniem (wyłącz = drukuj od razu)"
                   IsChecked="{Binding ShowPrintPreview}" />
+
+        <CheckBox Margin="0,12,0,0" Content="Zapamiętaj ostatnie powiększenie podglądu"
+                  IsChecked="{Binding RememberPreviewZoom}" />
 
         <TextBlock Margin="0,12,0,4" Text="Preferowana cena (gdy XML zawiera netto i brutto)" />
         <ComboBox

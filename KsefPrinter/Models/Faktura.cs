@@ -41,7 +41,6 @@ public class Faktura
     public string? WarunkiDostawy { get; set; }
     public List<string> StopkaFaktury { get; set; } = [];
     public List<DaneRejestrowe> Rejestry { get; set; } = [];
-    public List<string> Adnotacje { get; set; } = [];
 }
 
 public class Sprzedawca

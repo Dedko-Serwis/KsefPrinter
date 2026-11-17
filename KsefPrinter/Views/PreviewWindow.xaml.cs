@@ -1,41 +1,60 @@
-using KsefPrinter.Services;
 using KsefPrinter.Models;
-using System.ComponentModel;
+using KsefPrinter.Services;
 using System.Globalization;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Threading;
-using System.Windows.Media;
-using System.Windows.Controls.Primitives;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace KsefPrinter.Views;
 
 public partial class PreviewWindow : Window
 {
+    private const double MinZoom = 25;
+    private const double MaxZoom = 300;
+    private const double ZoomStep = 10;
+    private const double PageMargin = 24;
+
     public event Action? PrintingStarted;
     public event Action<bool>? PrintingFinished;
     public bool PrintWasRequested { get; private set; }
+
     private readonly FlowDocument _document;
     private readonly SettingsService _settingsService;
+    private readonly DocumentPaginator _paginator;
     private PreviewFitMode _fitMode = PreviewFitMode.Height;
     private bool _initializing = true;
-    private bool _applyingZoom;
+    private bool _settingZoomText;
     private double _customZoom = 100;
-    private bool _fitScheduled;
-    private bool _autoFitting;
+    private double _currentZoom = 100;
+    private int _pageNumber;
+    private int _pageCount = 1;
 
     public PreviewWindow(FlowDocument document, SettingsService? settingsService = null)
     {
         InitializeComponent();
         _document = document;
         _settingsService = settingsService ?? new SettingsService();
-        Viewer.Document = document;
+
+        _paginator = ((IDocumentPaginatorSource)document).DocumentPaginator;
+        double pageWidth = double.IsFinite(document.PageWidth) && document.PageWidth > 0
+            ? document.PageWidth : 793.7;
+        double pageHeight = double.IsFinite(document.PageHeight) && document.PageHeight > 0
+            ? document.PageHeight : 1122.5;
+        _paginator.PageSize = new Size(pageWidth, pageHeight);
+        PageContainer.Width = pageWidth;
+        PageContainer.Height = pageHeight;
+        PageView.Width = pageWidth;
+        PageView.Height = pageHeight;
+        PageView.DocumentPaginator = _paginator;
+        _paginator.ComputePageCount();
+        _pageCount = Math.Max(1, _paginator.PageCount);
+        UpdatePageNavigation();
+
         Loaded += RestorePreview;
         Closing += SavePreview;
-        DependencyPropertyDescriptor.FromProperty(FlowDocumentPageViewer.ZoomProperty, typeof(FlowDocumentPageViewer))
-            .AddValueChanged(Viewer, Viewer_ZoomChanged);
     }
 
     private void RestorePreview(object sender, RoutedEventArgs e)
@@ -55,13 +74,15 @@ public partial class PreviewWindow : Window
                 Top = s.PreviewTop;
             }
         }
+
         _customZoom = s.RememberPreviewZoom && double.IsFinite(s.PreviewZoom)
-            ? Math.Clamp(s.PreviewZoom, Viewer.MinZoom, Viewer.MaxZoom) : 100;
+            ? Math.Clamp(s.PreviewZoom, MinZoom, MaxZoom) : 100;
         _fitMode = Enum.IsDefined(s.PreviewFitMode) ? s.PreviewFitMode : PreviewFitMode.Height;
         if (s.PreviewMaximized) WindowState = WindowState.Maximized;
+
         _initializing = false;
         FitModeCombo.SelectedIndex = (int)_fitMode;
-        Dispatcher.BeginInvoke(ApplyPreviewMode, DispatcherPriority.Loaded);
+        Dispatcher.BeginInvoke(new Action(ApplyPreviewMode), DispatcherPriority.Loaded);
     }
 
     private void SavePreview(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -81,7 +102,6 @@ public partial class PreviewWindow : Window
         _settingsService.Save(s);
     }
 
-
     private void ApplyPreviewMode()
     {
         if (_initializing) return;
@@ -90,94 +110,35 @@ public partial class PreviewWindow : Window
             SetViewerZoom(_customZoom);
             return;
         }
-        ScheduleAutoFit();
-    }
 
-    private void ScheduleAutoFit()
-    {
-        if (_initializing || _fitMode == PreviewFitMode.Custom || _fitScheduled) return;
-        _fitScheduled = true;
-        Dispatcher.BeginInvoke(new Action(() =>
-        {
-            _fitScheduled = false;
-            FitToRenderedPage();
-        }), DispatcherPriority.ContextIdle);
-    }
-
-    private void FitToRenderedPage()
-    {
-        if (_initializing || _fitMode == PreviewFitMode.Custom || _autoFitting) return;
-        if (Viewer.ActualWidth <= 0 || Viewer.ActualHeight <= 0) return;
-
-        // FlowDocumentPageViewer może wyświetlać stronę w innej skali niż
-        // wynikałoby to z FlowDocument.PageWidth/PageHeight.
-        // Mierzymy faktycznie wyrenderowaną stronę, a nie rozmiar dokumentu.
-        var page = FindVisualChild<DocumentPageView>(Viewer);
-        if (page is null || page.ActualWidth <= 0 || page.ActualHeight <= 0) return;
-
-        Rect bounds = page.TransformToAncestor(Viewer)
-            .TransformBounds(new Rect(0, 0, page.ActualWidth, page.ActualHeight));
-        if (bounds.Width <= 0 || bounds.Height <= 0) return;
-
-        double availableWidth = Math.Max(1, Viewer.ActualWidth - 50);
-        double availableHeight = Math.Max(1, Viewer.ActualHeight - 65);
-        double ratio = _fitMode == PreviewFitMode.Width
-            ? availableWidth / bounds.Width
-            : availableHeight / bounds.Height;
-        if (!double.IsFinite(ratio) || Math.Abs(1 - ratio) < 0.025) return;
-
-        double targetZoom = Math.Clamp(Viewer.Zoom * ratio, Viewer.MinZoom, Viewer.MaxZoom);
-        if (Math.Abs(targetZoom - Viewer.Zoom) < 0.2) return;
-
-        _autoFitting = true;
-        try { SetViewerZoom(targetZoom); }
-        finally { _autoFitting = false; }
-
-        // Po zmianie Zoom układ strony aktualizuje się asynchronicznie.
-        // Kolejny pomiar koryguje ewentualny błąd (maks. kilka iteracji).
-        if (Math.Abs(targetZoom - Viewer.MinZoom) > 0.1 &&
-            Math.Abs(targetZoom - Viewer.MaxZoom) > 0.1)
-            ScheduleAutoFit();
-    }
-
-    private static T? FindVisualChild<T>(DependencyObject root) where T : DependencyObject
-    {
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
-        {
-            var child = VisualTreeHelper.GetChild(root, i);
-            if (child is T match) return match;
-            var nested = FindVisualChild<T>(child);
-            if (nested is not null) return nested;
-        }
-        return null;
+        // Skala dotyczy wyłącznie widoku, nie rozmiaru strony dokumentu.
+        double availableWidth = Math.Max(1, PreviewScroll.ActualWidth - PageMargin - 18);
+        double availableHeight = Math.Max(1, PreviewScroll.ActualHeight - PageMargin - 18);
+        double zoom = 100 * (_fitMode == PreviewFitMode.Width
+            ? availableWidth / PageContainer.Width
+            : availableHeight / PageContainer.Height);
+        SetViewerZoom(zoom);
     }
 
     private void SetViewerZoom(double zoom)
     {
         if (!double.IsFinite(zoom)) return;
-        _applyingZoom = true;
+        _currentZoom = Math.Clamp(zoom, MinZoom, MaxZoom);
+        PageScale.ScaleX = _currentZoom / 100;
+        PageScale.ScaleY = _currentZoom / 100;
+        _settingZoomText = true;
         try
         {
-            Viewer.Zoom = Math.Clamp(zoom, Viewer.MinZoom, Viewer.MaxZoom);
-            ZoomCombo.Text = $"{Viewer.Zoom:0.#}%";
+            ZoomCombo.SelectedIndex = -1;
+            ZoomCombo.Text = $"{_currentZoom:0.#}%";
         }
-        finally { _applyingZoom = false; }
+        finally { _settingZoomText = false; }
     }
 
-    private void Viewer_SizeChanged(object sender, SizeChangedEventArgs e)
+    private void PreviewScroll_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (!_initializing && _fitMode != PreviewFitMode.Custom)
-            ScheduleAutoFit();
-    }
-
-    private void Viewer_ZoomChanged(object? sender, EventArgs e)
-    {
-        if (_initializing || _applyingZoom || _autoFitting) return;
-        // Zmiana przez wbudowany pasek PageViewer także oznacza tryb ręczny.
-        _customZoom = Viewer.Zoom;
-        _fitMode = PreviewFitMode.Custom;
-        FitModeCombo.SelectedIndex = (int)_fitMode;
-        ZoomCombo.Text = $"{Viewer.Zoom:0.#}%";
+            Dispatcher.BeginInvoke(new Action(ApplyPreviewMode), DispatcherPriority.Loaded);
     }
 
     private void FitModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -189,21 +150,19 @@ public partial class PreviewWindow : Window
 
     private void SetCustomZoom(double zoom)
     {
-        _customZoom = Math.Clamp(zoom, Viewer.MinZoom, Viewer.MaxZoom);
+        if (!double.IsFinite(zoom)) return;
+        _customZoom = Math.Clamp(zoom, MinZoom, MaxZoom);
         _fitMode = PreviewFitMode.Custom;
         FitModeCombo.SelectedIndex = (int)_fitMode;
         SetViewerZoom(_customZoom);
     }
 
-    private void ZoomOut_Click(object sender, RoutedEventArgs e) =>
-        SetCustomZoom(Viewer.Zoom - Viewer.ZoomIncrement);
-
-    private void ZoomIn_Click(object sender, RoutedEventArgs e) =>
-        SetCustomZoom(Viewer.Zoom + Viewer.ZoomIncrement);
+    private void ZoomOut_Click(object sender, RoutedEventArgs e) => SetCustomZoom(_currentZoom - ZoomStep);
+    private void ZoomIn_Click(object sender, RoutedEventArgs e) => SetCustomZoom(_currentZoom + ZoomStep);
 
     private void ZoomCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_initializing || ZoomCombo.SelectedItem is not ComboBoxItem item) return;
+        if (_initializing || _settingZoomText || ZoomCombo.SelectedItem is not ComboBoxItem item) return;
         if (TryParseZoom(item.Content?.ToString(), out var zoom)) SetCustomZoom(zoom);
     }
 
@@ -215,14 +174,13 @@ public partial class PreviewWindow : Window
         e.Handled = true;
     }
 
-    private void ZoomCombo_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) =>
-        CommitZoomText();
+    private void ZoomCombo_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) => CommitZoomText();
 
     private void CommitZoomText()
     {
-        if (_initializing) return;
+        if (_initializing || _settingZoomText) return;
         if (TryParseZoom(ZoomCombo.Text, out var zoom)) SetCustomZoom(zoom);
-        else ZoomCombo.Text = $"{Viewer.Zoom:0.#}%";
+        else SetViewerZoom(_currentZoom);
     }
 
     private static bool TryParseZoom(string? text, out double zoom)
@@ -230,6 +188,30 @@ public partial class PreviewWindow : Window
         string value = (text ?? "").Trim().TrimEnd('%').Trim();
         return double.TryParse(value, NumberStyles.Float, CultureInfo.CurrentCulture, out zoom)
             && double.IsFinite(zoom);
+    }
+
+    private void UpdatePageNavigation()
+    {
+        PageView.PageNumber = _pageNumber;
+        PageCounter.Text = $"{_pageNumber + 1} z {_pageCount}";
+        PreviousPageButton.IsEnabled = _pageNumber > 0;
+        NextPageButton.IsEnabled = _pageNumber + 1 < _pageCount;
+    }
+
+    private void PreviousPage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_pageNumber <= 0) return;
+        _pageNumber--;
+        UpdatePageNavigation();
+        PreviewScroll.ScrollToTop();
+    }
+
+    private void NextPage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_pageNumber + 1 >= _pageCount) return;
+        _pageNumber++;
+        UpdatePageNavigation();
+        PreviewScroll.ScrollToTop();
     }
 
     private async void PrintButton_Click(object sender, RoutedEventArgs e)
@@ -248,9 +230,6 @@ public partial class PreviewWindow : Window
             MessageBox.Show(this, $"Błąd drukowania: {ex.Message}",
                 "KsefPrinter", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-        finally
-        {
-            PrintButton.IsEnabled = true;
-        }
+        finally { PrintButton.IsEnabled = true; }
     }
 }

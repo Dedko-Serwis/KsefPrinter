@@ -4,6 +4,7 @@ Set-StrictMode -Version Latest
 $root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $project = Join-Path $root 'KsefPrinter\KsefPrinter.csproj'
 $publishDir = Join-Path $root 'publish\KsefPrinter'
+$tests = Join-Path $root 'KsefPrinter.Tests\KsefPrinter.Tests.csproj'
 $installerScript = Join-Path $root 'installer\KsefPrinter.iss'
 
 [xml]$csproj = Get-Content -LiteralPath $project
@@ -12,6 +13,13 @@ if ([string]::IsNullOrWhiteSpace($version) -or $version -notmatch '^\d+\.\d+\.\d
     throw "Nieprawidlowa wersja w KsefPrinter.csproj: '$version'"
 }
 
+Write-Host "Uruchamianie testow KsefPrinter $version..."
+dotnet test $tests -c Release
+if ($LASTEXITCODE -ne 0) { throw 'Testy nie powiodly sie.' }
+
+if (Test-Path -LiteralPath $publishDir) {
+    Remove-Item -LiteralPath $publishDir -Recurse -Force
+}
 Write-Host "Publikowanie KsefPrinter $version (win-x64, bez .NET Runtime)..."
 dotnet publish $project -c Release -r win-x64 --self-contained false -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o $publishDir
 if ($LASTEXITCODE -ne 0) { throw 'dotnet publish nie powiodl sie.' }

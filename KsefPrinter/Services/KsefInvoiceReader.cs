@@ -54,6 +54,7 @@ public static class KsefInvoiceReader
 
         ParseNaglowek(faktura, root, ns);
         ParseFa(faktura, root, ns);
+        ParseAdnotacje(faktura, root, ns);
         ParseSprzedawca(faktura, root, ns);
         ParseNabywca(faktura, root, ns);
         ParsePodmiotyTrzecie(faktura, root, ns);
@@ -118,6 +119,46 @@ public static class KsefInvoiceReader
         var p15 = fa.Element(ns + "P_15")?.Value;
         if (!string.IsNullOrEmpty(p15))
             faktura.KwotaNaleznosci = ParseDecimal(p15) ?? 0;
+    }
+
+    private static void ParseAdnotacje(Faktura faktura, XElement root, XNamespace ns)
+    {
+        var adnotacje = root.Element(ns + "Fa")?.Element(ns + "Adnotacje");
+        if (adnotacje == null) return;
+
+        void AddIfYes(string field, string label)
+        {
+            if (adnotacje.Element(ns + field)?.Value == "1")
+                faktura.Adnotacje.Add(label);
+        }
+
+        AddIfYes("P_16", "Metoda kasowa");
+        AddIfYes("P_17", "Samofakturowanie");
+        AddIfYes("P_18", "Odwrotne obciążenie");
+        AddIfYes("P_18A", "Mechanizm podzielonej płatności");
+        AddIfYes("P_23", "Procedura uproszczona – transakcja trójstronna");
+
+        var zwolnienie = adnotacje.Element(ns + "Zwolnienie");
+        if (zwolnienie != null && zwolnienie.Element(ns + "P_19N")?.Value != "1")
+        {
+            var podstawa = new[] { "P_19A", "P_19B", "P_19C" }
+                .Select(x => zwolnienie.Element(ns + x)?.Value)
+                .Where(x => !string.IsNullOrWhiteSpace(x));
+            faktura.Adnotacje.Add("Zwolnienie z VAT" +
+                (podstawa.Any() ? ": " + string.Join("; ", podstawa) : ""));
+        }
+
+        var transport = adnotacje.Element(ns + "NoweSrodkiTransportu");
+        if (transport != null && transport.Element(ns + "P_22N")?.Value != "1")
+            faktura.Adnotacje.Add("Wewnątrzwspólnotowa dostawa nowego środka transportu");
+
+        var marza = adnotacje.Element(ns + "PMarzy");
+        if (marza != null && marza.Element(ns + "P_PMarzyN")?.Value != "1")
+        {
+            string? rodzaj = marza.Element(ns + "P_PMarzy")?.Value;
+            faktura.Adnotacje.Add(string.IsNullOrWhiteSpace(rodzaj)
+                ? "Procedura marży" : "Procedura marży: " + rodzaj);
+        }
     }
 
     private static void ParseSprzedawca(Faktura faktura, XElement? root, XNamespace ns)

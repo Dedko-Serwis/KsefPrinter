@@ -44,9 +44,27 @@
                 </Button>
             </DockPanel>
         </Border>
-        <FlowDocumentPageViewer x:Name="Viewer" Background="DarkGray"
-                                Zoom="100" MinZoom="25" MaxZoom="300" ZoomIncrement="10"
-                                SizeChanged="Viewer_SizeChanged"
-                                HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+        <Grid Background="DarkGray">
+            <ScrollViewer x:Name="PreviewScroll" HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto" SizeChanged="PreviewScroll_SizeChanged">
+                <Border x:Name="PageContainer" Background="White"
+                        HorizontalAlignment="Center" VerticalAlignment="Top"
+                        Margin="12">
+                    <Border.LayoutTransform>
+                        <ScaleTransform x:Name="PageScale" ScaleX="1" ScaleY="1"/>
+                    </Border.LayoutTransform>
+                    <DocumentPageView x:Name="PageView" PageNumber="0"/>
+                </Border>
+            </ScrollViewer>
+            <Border VerticalAlignment="Bottom" HorizontalAlignment="Center"
+                    Background="#E8E8E8" CornerRadius="4" Padding="6,2">
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="PreviousPageButton" Content="◀" Width="26" Click="PreviousPage_Click"/>
+                    <TextBlock x:Name="PageCounter" Text="1 z 1" VerticalAlignment="Center"
+                               Margin="10,0"/>
+                    <Button x:Name="NextPageButton" Content="▶" Width="26" Click="NextPage_Click"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </DockPanel>
 </Window>

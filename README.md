@@ -15,7 +15,8 @@ Program jest udostępniany na licencji **GNU GPL v3.0**. Możesz również anali
 
 - Wczytywanie faktur XML metodą przeciągnij i upuść
 - Obsługa faktur standardowych, korygujących, zaliczkowych i rozliczeniowych
-- Podgląd wydruku i wybór drukarki
+- Podgląd wydruku (dopasowanie do wysokości lub szerokości strony, powiększenie powyżej 100%) i wybór drukarki
+- Skrócone oznaczenia JST/GV przy nabywcy oraz drukowanie mających zastosowanie adnotacji KSeF
 - Obsługa kodu QR do weryfikacji faktury KSeF
 - Konfiguracja sposobu prezentacji pozycji i cen
 - Zapamiętywanie rozmiaru, położenia i powiększenia okna podglądu
@@ -38,6 +39,23 @@ dotnet restore KsefPrinter.sln
 dotnet build KsefPrinter.sln -c Release
 dotnet test KsefPrinter.Tests/KsefPrinter.Tests.csproj -c Release
 ```
+
+## Budowanie instalatora (wydanie)
+
+Zainstaluj **.NET 10 SDK** oraz **Inno Setup 7** (obsługiwane jest również Inno Setup 6).
+W katalogu głównym repozytorium uruchom:
+
+```powershell
+.\scripts\build-release.ps1
+```
+
+Skrypt automatycznie odczytuje wersję z `KsefPrinter/KsefPrinter.csproj`, uruchamia testy w konfiguracji Release, publikuje aplikację dla `win-x64` i tworzy instalator w `dist/KsefPrinter-WERSJA-Setup.exe`. Po zakończeniu wyświetla sumę SHA-256. Nie trzeba przekazywać numeru wersji w parametrze.
+
+Aby wydać kolejną wersję, zmień tylko wartość `<Version>` w pliku `KsefPrinter/KsefPrinter.csproj` (obecnie `1.12.3`). Katalog `dist/` jest pomijany przez Git.
+
+Instalator wybiera język **polski lub angielski zgodnie z językiem interfejsu Windows**, bez pytania o język; dla innych języków systemu używa angielskiego. Aplikacja jest publikowana jako **framework-dependent**: instalator nie zawiera ani nie instaluje automatycznie .NET 10 Windows Desktop Runtime. Na komputerze docelowym należy go zainstalować oddzielnie, jeżeli go brakuje.
+
+Starsze polecenie `.\scripts\Publish.ps1` pozostaje dostępne i wykonuje ten sam proces.
 
 ## Użytkowanie
 

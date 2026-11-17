@@ -17,6 +17,7 @@ public class SettingsViewModel : ObservableObject
     private PreferredPriceMode _preferredPrice = PreferredPriceMode.Net;
     private int _itemNameMaxLength = 34;
     private bool _showPrintPreview = true;
+    private bool _rememberPreviewZoom;
 
     public ObservableCollection<string> Printers { get; } = [];
     public string[] ItemNameDisplayModes { get; } = ["Zawijaj", "Ucinaj"];
@@ -31,6 +32,11 @@ public class SettingsViewModel : ObservableObject
     {
         get => _showPrintPreview;
         set { if (SetProperty(ref _showPrintPreview, value)) Save(); }
+    }
+    public bool RememberPreviewZoom
+    {
+        get => _rememberPreviewZoom;
+        set { if (SetProperty(ref _rememberPreviewZoom, value)) Save(); }
     }
     public ItemNameDisplayMode ItemNameDisplay
     {
@@ -88,6 +94,7 @@ public class SettingsViewModel : ObservableObject
         PreferredPrice = settings.PreferredPrice;
         ItemNameMaxLength = settings.ItemNameMaxLength;
         ShowPrintPreview = settings.ShowPrintPreview;
+        RememberPreviewZoom = settings.RememberPreviewZoom;
         _loading = false;
     }
 
@@ -102,6 +109,7 @@ public class SettingsViewModel : ObservableObject
             settings.PreferredPrice = PreferredPrice;
             settings.ItemNameMaxLength = ItemNameMaxLength;
             settings.ShowPrintPreview = ShowPrintPreview;
+            settings.RememberPreviewZoom = RememberPreviewZoom;
             _settingsService.Save(settings);
             Saved?.Invoke(this, EventArgs.Empty);
         }

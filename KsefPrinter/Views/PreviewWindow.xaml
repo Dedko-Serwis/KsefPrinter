@@ -9,26 +9,62 @@
     WindowStartupLocation="CenterScreen">
     <DockPanel>
         <Border DockPanel.Dock="Top" Background="#F5F5F5" Padding="8">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="PrintButton" Width="120" Height="34" Click="PrintButton_Click"
-                        ToolTip="Drukuj na drukarce wybranej w ustawieniach">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ComboBox x:Name="FitModeCombo" Width="205" Height="30"
+                              SelectionChanged="FitModeCombo_SelectionChanged"
+                              ToolTip="Sposób dopasowania podglądu">
+                        <ComboBoxItem Content="Dopasuj do wysokości" Tag="Height"/>
+                        <ComboBoxItem Content="Dopasuj do szerokości" Tag="Width"/>
+                        <ComboBoxItem Content="Własne powiększenie" Tag="Custom"/>
+                    </ComboBox>
+                    <Button Content="−" Width="32" Height="30" Margin="8,0,0,0" Click="ZoomOut_Click"/>
+                    <ComboBox x:Name="ZoomCombo" Width="82" Height="30" Margin="4,0,0,0"
+                              IsEditable="True" IsTextSearchEnabled="False"
+                              LostKeyboardFocus="ZoomCombo_LostKeyboardFocus"
+                              KeyDown="ZoomCombo_KeyDown"
+                              SelectionChanged="ZoomCombo_SelectionChanged">
+                        <ComboBoxItem Content="25%"/>
+                        <ComboBoxItem Content="50%"/>
+                        <ComboBoxItem Content="75%"/>
+                        <ComboBoxItem Content="100%"/>
+                        <ComboBoxItem Content="125%"/>
+                        <ComboBoxItem Content="150%"/>
+                        <ComboBoxItem Content="200%"/>
+                        <ComboBoxItem Content="300%"/>
+                    </ComboBox>
+                    <Button Content="+" Width="32" Height="30" Margin="4,0,0,0" Click="ZoomIn_Click"/>
+                </StackPanel>
+                <Button x:Name="PrintButton" DockPanel.Dock="Right" Width="120" Height="34"
+                        Click="PrintButton_Click" ToolTip="Drukuj na drukarce wybranej w ustawieniach">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                         <TextBlock FontFamily="Segoe UI Symbol" FontSize="18" Text="🖨" Margin="0,0,8,0" />
                         <TextBlock Text="Drukuj" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
-            </StackPanel>
+            </DockPanel>
         </Border>
-        <Grid>
-        <FlowDocumentPageViewer
-            x:Name="Viewer"
-            Background="DarkGray"
-            Zoom="100"
-            MinZoom="25"
-            MaxZoom="300"
-            ZoomIncrement="10"
-            HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch" />
-    </Grid>
+        <Grid Background="DarkGray">
+            <ScrollViewer x:Name="PreviewScroll" HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Auto" SizeChanged="PreviewScroll_SizeChanged">
+                <Border x:Name="PageContainer" Background="White"
+                        HorizontalAlignment="Center" VerticalAlignment="Top"
+                        Margin="12">
+                    <Border.LayoutTransform>
+                        <ScaleTransform x:Name="PageScale" ScaleX="1" ScaleY="1"/>
+                    </Border.LayoutTransform>
+                    <DocumentPageView x:Name="PageView" PageNumber="0"/>
+                </Border>
+            </ScrollViewer>
+            <Border VerticalAlignment="Bottom" HorizontalAlignment="Center"
+                    Background="#E8E8E8" CornerRadius="4" Padding="6,2">
+                <StackPanel Orientation="Horizontal">
+                    <Button x:Name="PreviousPageButton" Content="◀" Width="26" Click="PreviousPage_Click"/>
+                    <TextBlock x:Name="PageCounter" Text="1 z 1" VerticalAlignment="Center"
+                               Margin="10,0"/>
+                    <Button x:Name="NextPageButton" Content="▶" Width="26" Click="NextPage_Click"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </DockPanel>
 </Window>

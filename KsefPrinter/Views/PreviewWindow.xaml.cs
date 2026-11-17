@@ -5,6 +5,8 @@ using System.Globalization;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Threading;
+using System.Windows.Media;
+using System.Windows.Controls.Primitives;
 using System.Windows;
 using System.Windows.Documents;
 
@@ -21,6 +23,8 @@ public partial class PreviewWindow : Window
     private bool _initializing = true;
     private bool _applyingZoom;
     private double _customZoom = 100;
+    private bool _fitScheduled;
+    private bool _autoFitting;
 
     public PreviewWindow(FlowDocument document, SettingsService? settingsService = null)
     {
@@ -80,23 +84,72 @@ public partial class PreviewWindow : Window
 
     private void ApplyPreviewMode()
     {
-        if (_initializing || Viewer.ActualWidth <= 0 || Viewer.ActualHeight <= 0) return;
-
-        double zoom = _customZoom;
-        if (_fitMode != PreviewFitMode.Custom)
+        if (_initializing) return;
+        if (_fitMode == PreviewFitMode.Custom)
         {
-            double pageWidth = _document.PageWidth;
-            double pageHeight = _document.PageHeight;
-            if (!double.IsFinite(pageWidth) || pageWidth <= 0) pageWidth = 793.7;
-            if (!double.IsFinite(pageHeight) || pageHeight <= 0) pageHeight = 1122.5;
-
-            // Rezerwa na marginesy i pasek przewijania/sterowania PageViewer.
-            double availableWidth = Math.Max(1, Viewer.ActualWidth - 70);
-            double availableHeight = Math.Max(1, Viewer.ActualHeight - 80);
-            zoom = 100 * (_fitMode == PreviewFitMode.Width
-                ? availableWidth / pageWidth : availableHeight / pageHeight);
+            SetViewerZoom(_customZoom);
+            return;
         }
-        SetViewerZoom(zoom);
+        ScheduleAutoFit();
+    }
+
+    private void ScheduleAutoFit()
+    {
+        if (_initializing || _fitMode == PreviewFitMode.Custom || _fitScheduled) return;
+        _fitScheduled = true;
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            _fitScheduled = false;
+            FitToRenderedPage();
+        }), DispatcherPriority.ContextIdle);
+    }
+
+    private void FitToRenderedPage()
+    {
+        if (_initializing || _fitMode == PreviewFitMode.Custom || _autoFitting) return;
+        if (Viewer.ActualWidth <= 0 || Viewer.ActualHeight <= 0) return;
+
+        // FlowDocumentPageViewer może wyświetlać stronę w innej skali niż
+        // wynikałoby to z FlowDocument.PageWidth/PageHeight.
+        // Mierzymy faktycznie wyrenderowaną stronę, a nie rozmiar dokumentu.
+        var page = FindVisualChild<DocumentPageView>(Viewer);
+        if (page is null || page.ActualWidth <= 0 || page.ActualHeight <= 0) return;
+
+        Rect bounds = page.TransformToAncestor(Viewer)
+            .TransformBounds(new Rect(0, 0, page.ActualWidth, page.ActualHeight));
+        if (bounds.Width <= 0 || bounds.Height <= 0) return;
+
+        double availableWidth = Math.Max(1, Viewer.ActualWidth - 50);
+        double availableHeight = Math.Max(1, Viewer.ActualHeight - 65);
+        double ratio = _fitMode == PreviewFitMode.Width
+            ? availableWidth / bounds.Width
+            : availableHeight / bounds.Height;
+        if (!double.IsFinite(ratio) || Math.Abs(1 - ratio) < 0.025) return;
+
+        double targetZoom = Math.Clamp(Viewer.Zoom * ratio, Viewer.MinZoom, Viewer.MaxZoom);
+        if (Math.Abs(targetZoom - Viewer.Zoom) < 0.2) return;
+
+        _autoFitting = true;
+        try { SetViewerZoom(targetZoom); }
+        finally { _autoFitting = false; }
+
+        // Po zmianie Zoom układ strony aktualizuje się asynchronicznie.
+        // Kolejny pomiar koryguje ewentualny błąd (maks. kilka iteracji).
+        if (Math.Abs(targetZoom - Viewer.MinZoom) > 0.1 &&
+            Math.Abs(targetZoom - Viewer.MaxZoom) > 0.1)
+            ScheduleAutoFit();
+    }
+
+    private static T? FindVisualChild<T>(DependencyObject root) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is T match) return match;
+            var nested = FindVisualChild<T>(child);
+            if (nested is not null) return nested;
+        }
+        return null;
     }
 
     private void SetViewerZoom(double zoom)
@@ -114,12 +167,12 @@ public partial class PreviewWindow : Window
     private void Viewer_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         if (!_initializing && _fitMode != PreviewFitMode.Custom)
-            Dispatcher.BeginInvoke(ApplyPreviewMode, DispatcherPriority.Loaded);
+            ScheduleAutoFit();
     }
 
     private void Viewer_ZoomChanged(object? sender, EventArgs e)
     {
-        if (_initializing || _applyingZoom) return;
+        if (_initializing || _applyingZoom || _autoFitting) return;
         // Zmiana przez wbudowany pasek PageViewer także oznacza tryb ręczny.
         _customZoom = Viewer.Zoom;
         _fitMode = PreviewFitMode.Custom;

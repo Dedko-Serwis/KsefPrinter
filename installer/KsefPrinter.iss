@@ -19,7 +19,9 @@ OutputBaseFilename=KsefPrinter-{#MyAppVersion}-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
-ShowLanguageDialog=auto
+ShowLanguageDialog=no
+LanguageDetectionMethod=uilanguage
+UsePreviousLanguage=no
 UninstallDisplayIcon={app}\KsefPrinter.exe
 CloseApplications=yes
 RestartApplications=no
@@ -27,8 +29,8 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 
 [Languages]
-Name: "polish"; MessagesFile: "compiler:Languages\Polish.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "polish"; MessagesFile: "compiler:Languages\Polish.isl"
 
 [CustomMessages]
 polish.DesktopIcon=Utworz skrot na pulpicie

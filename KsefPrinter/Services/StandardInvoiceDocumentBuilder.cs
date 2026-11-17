@@ -409,7 +409,8 @@ public sealed class StandardInvoiceDocumentBuilder : IInvoiceDocumentBuilder
     private static TableCell CreatePartyCell(string title, string? name, string? nip, string? address, string? country)
     {
         Paragraph p = new() { Margin = new Thickness(4) };
-        p.Inlines.Add(new Italic(new Run(title+" :") { FontSize=11}));
+        p.Inlines.Add(new Italic(new Run(title+" :") { FontSize=9})); //decho
+        p.Inlines.Add(new Run(".\n.") { FontSize = 3 }); //decho
         if (Has(name)) p.Inlines.Add(new Bold(new Run($"\n{name}")));
         if (Has(nip)) p.Inlines.Add(new Run($"\nNIP: {nip}"));
         if (Has(address)) p.Inlines.Add(new Run($"\n{address}"));

@@ -39,6 +39,7 @@ public sealed class StandardInvoiceDocumentBuilder : IInvoiceDocumentBuilder
         AddTotalAmount(doc, faktura);
         AddVatAndSettlement(doc, faktura);
         AddPayment(doc, faktura);
+        AddAdnotacje(doc, faktura);
         AddAdditionalInformation(doc, faktura);
         AddFooter(doc, faktura);
 
@@ -99,6 +100,15 @@ public sealed class StandardInvoiceDocumentBuilder : IInvoiceDocumentBuilder
 
         TableCell buyer = CreatePartyCell("Nabywca", f.Nabywca?.Nazwa,
             f.Nabywca?.PelnyNIP, f.Nabywca?.PełnyAdres, f.Nabywca?.KodKraju);
+
+        if (f.Nabywca?.JST is "1" or "2" || f.Nabywca?.GV is "1" or "2")
+        {
+            var paragraph = buyer.Blocks.OfType<Paragraph>().First();
+            if (f.Nabywca?.JST is "1" or "2")
+                paragraph.Inlines.Add(new Run("\nJST: " + (f.Nabywca.JST == "1" ? "TAK" : "NIE")));
+            if (f.Nabywca?.GV is "1" or "2")
+                paragraph.Inlines.Add(new Run("\nGV: " + (f.Nabywca.GV == "1" ? "TAK" : "NIE")));
+        }
 
         TableCell ThirdPartyCell(int index)
         {
@@ -358,6 +368,15 @@ public sealed class StandardInvoiceDocumentBuilder : IInvoiceDocumentBuilder
         row.Cells.Add(SectionCell(right));
         table.RowGroups[0].Rows.Add(row);
         doc.Blocks.Add(table);
+    }
+
+    private static void AddAdnotacje(FlowDocument doc, Faktura f)
+    {
+        if (f.Adnotacje.Count == 0) return;
+        AddSectionTitle(doc, "Adnotacje");
+        foreach (var adnotacja in f.Adnotacje)
+            doc.Blocks.Add(new Paragraph(new Run(adnotacja))
+            { Margin = new Thickness(0, 1, 0, 1) });
     }
 
     private static void AddAdditionalInformation(FlowDocument doc, Faktura f)

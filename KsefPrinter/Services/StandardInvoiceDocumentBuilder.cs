@@ -107,7 +107,7 @@ public sealed class StandardInvoiceDocumentBuilder : IInvoiceDocumentBuilder
             if (f.Nabywca?.JST is "1" or "2")
                 paragraph.Inlines.Add(new Run("\nJST: " + (f.Nabywca.JST == "1" ? "TAK" : "NIE")));
             if (f.Nabywca?.GV is "1" or "2")
-                paragraph.Inlines.Add(new Run("\nGV: " + (f.Nabywca.GV == "1" ? "TAK" : "NIE")));
+                paragraph.Inlines.Add(new Run("\tGV: " + (f.Nabywca.GV == "1" ? "TAK" : "NIE")));
         }
 
         TableCell ThirdPartyCell(int index)

@@ -61,6 +61,10 @@ Starsze polecenie `.\scripts\Publish.ps1` pozostaje dostępne i wykonuje ten sam
 
 Przeciągnij plik faktury XML na pole w zakładce **Drukowanie**. W zakładce **Ustawienia** wybierz drukarkę i parametry wydruku. Przed drukiem sprawdź poprawność dokumentu i danych.
 
+## Dane użytkownika
+
+Ustawienia są zapisywane w `%LOCALAPPDATA%\Dedko Serwis\KsefPrinter`, a nowe logi trafiają do podkatalogu `logs`. Przy pierwszym uruchomieniu bez ustawień w nowym miejscu aplikacja importuje je z `%LOCALAPPDATA%\KsefPrinter` albo ze starszego pliku obok programu.
+
 ## Aktualizacje
 
 Planowane wydania są publikowane w sekcji [Releases](https://github.com/Dedko-Serwis/KsefPrinter/releases). Aplikacja może okresowo sprawdzać ich dostępność. Pobranie i uruchomienie instalatora wymaga potwierdzenia użytkownika.

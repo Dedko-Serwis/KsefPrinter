@@ -8,9 +8,7 @@ public class LoggerService
 
     public LoggerService()
     {
-        _folder = Path.Combine(
-            AppContext.BaseDirectory,
-            "logs");
+        _folder = Path.Combine(SettingsService.DataDirectory, "logs");
 
         Directory.CreateDirectory(_folder);
     }
